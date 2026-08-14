@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>農業綠能輿情 · 主控台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<base target="_top">
 <style>
   :root {
     --bg:#f5f1e8;--paper:#fbf8f1;
@@ -119,8 +119,6 @@
     .nav-bar{padding:10px 16px}
   }
 </style>
-  <script src="js/mock-data.js"></script>
-  <script src="js/mock-api.js"></script>
 </head>
 <body>
 
@@ -129,9 +127,9 @@
   <span class="nav-sep">/</span>
   <span style="color:var(--ink)">主控台</span>
   <div class="nav-spacer"></div>
-  <a class="nav-link" href="weekly.html" target="_top">📊 週輿情彙整</a>
-  <a class="nav-link" href="arguments.html" target="_top">⚖ 論點排排看</a>
-  <a class="nav-link" href="index.html" target="_top">→ 候選新聞頁</a>
+  <a class="nav-link" href="<?= weeklyUrl ?>" target="_top">📊 週輿情彙整</a>
+  <a class="nav-link" href="<?= argumentsUrl ?>" target="_top">⚖ 論點排排看</a>
+  <a class="nav-link" href="<?= candidatesUrl ?>" target="_top">→ 候選新聞頁</a>
   <span class="nav-badge" id="nav-version">v0.5.2</span>
 </div>
 

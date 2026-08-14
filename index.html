@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<base target="_top">
 <style>
   :root {
     --bg:#f5f1e8;--paper:#fbf8f1;
@@ -236,8 +236,6 @@
     .ws-body{grid-template-columns:1fr}
   }
 </style>
-  <script src="js/mock-data.js"></script>
-  <script src="js/mock-api.js"></script>
 </head>
 <body>
 
@@ -249,7 +247,7 @@
 
     <div class="status-bar">
       <div class="status-info">
-        <span class="status-item"><span class="status-dot" id="status-dot"></span>資料更新時間：<strong id="last-run-at">2026/08/14 07:00:15</strong></span>
+        <span class="status-item"><span class="status-dot" id="status-dot"></span>資料更新時間：<strong id="last-run-at"><?= lastRunAt ?></strong></span>
         <span class="status-item">候選 <strong id="cand-count">0</strong> 則 · 待確認 <strong id="rej-count">0</strong> 則</span>
       </div>
       <div class="fetch-group">
@@ -282,8 +280,8 @@
     <button class="pill" data-filter="selected">已勾選</button>
     <div class="filter-spacer"></div>
     <button class="text-btn" id="btn-add-news" style="border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:5px 12px;">＋ 新增新聞</button>
-    <a class="text-btn" id="link-arguments" href="arguments.html" target="_top" style="border:1px solid var(--accent);color:var(--accent);text-decoration:none;border-radius:3px;padding:5px 12px;">⚖ 論點排排看</a>
-    <a class="text-btn" id="link-weekly" href="weekly.html" target="_top" style="border:1px solid var(--accent);color:var(--accent);text-decoration:none;border-radius:3px;padding:5px 12px;">📊 週輿情彙整</a>
+    <a class="text-btn" id="link-arguments" href="<?= argumentsUrl ?>" target="_top" style="border:1px solid var(--accent);color:var(--accent);text-decoration:none;border-radius:3px;padding:5px 12px;">⚖ 論點排排看</a>
+    <a class="text-btn" id="link-weekly" href="<?= weeklyUrl ?>" target="_top" style="border:1px solid var(--accent);color:var(--accent);text-decoration:none;border-radius:3px;padding:5px 12px;">📊 週輿情彙整</a>
     <button class="text-btn" id="btn-select-all">全選建議關注</button>
     <button class="text-btn" id="btn-clear">清除勾選</button>
   </div>
@@ -375,13 +373,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const GREEN_TYPES = window.MOCK_DATA.GREEN_TYPES;
-const INITIATORS  = window.MOCK_DATA.INITIATORS;
-const TAGS        = window.MOCK_DATA.TAGS;
+const GREEN_TYPES = <?!= JSON.stringify(["邊際農地","農糧製儲銷等(含農電共生)","漁電共生","畜電共生","生質能","水域光電","小水力發電","農村綠能","綜合描述","其他"]) ?>;
+const INITIATORS  = <?!= JSON.stringify(["民意代表","政府機關(單位)","記者及社論","民間團體","學研單位","引用外國媒體","綠能業者","一般民眾"]) ?>;
+const TAGS        = <?!= JSON.stringify(["政策法規","進度及發展","環保","生態環境","景觀","農業生產影響","經濟","用地取得","饋線","發電設施安全","發電設施除役","設備技術","公民參與","實務案例"]) ?>;
 
-const INITIAL_CANDIDATES = window.MOCK_DATA.candidates;
-const INITIAL_REJECTED   = window.MOCK_DATA.rejected;
-const PASSWORD  = window.MOCK_DATA.password;
+const INITIAL_CANDIDATES = <?!= candidates ?>;
+const INITIAL_REJECTED   = <?!= rejected ?>;
+const PASSWORD  = <?= JSON.stringify(password) ?>;
 
 let state    = INITIAL_CANDIDATES.map(c => ({ ...c, selectedTags: c.tags || [] }));
 let rejected = [...INITIAL_REJECTED];

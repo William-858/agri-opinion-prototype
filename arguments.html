@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>論點排排看 · 回應稿工作台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<base target="_top">
 <style>
   :root{
     --bg:#f5f1e8;--paper:#fbf8f1;
@@ -128,8 +128,6 @@
     .url-row .btn{width:100%}
   }
 </style>
-  <script src="js/mock-data.js"></script>
-  <script src="js/mock-api.js"></script>
 </head>
 <body>
 
@@ -138,7 +136,7 @@
   <span class="nav-sep">/</span>
   <span style="color:var(--ink)">論點排排看</span>
   <div class="nav-spacer"></div>
-  <a href="index.html">← 候選新聞</a>
+  <a href="?key=<?= encodeURIComponent(password) ?>&page=candidates">← 候選新聞</a>
   <span class="kb-status" id="kb-status">—</span>
 </div>
 
@@ -232,10 +230,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const PASSWORD  = window.MOCK_DATA.password;
-const STYLES    = window.MOCK_DATA.styles;
-const INIT_TITLE = "";
-const INIT_BODY  = "";
+const PASSWORD  = <?= JSON.stringify(password) ?>;
+const STYLES    = <?!= styles ?>;
+const INIT_TITLE = <?= JSON.stringify(newsTitle) ?>;
+const INIT_BODY  = <?= JSON.stringify(newsBody) ?>;
 
 let analysis = [];   // [{issue, matched:[{id,title,body,source}], needNew, newPoint}]
 let tray = [];       // [{id,title,body,source}]
