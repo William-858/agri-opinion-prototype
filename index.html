@@ -46,7 +46,7 @@
   /* ---------- header ---------- */
   header{
     display:flex; align-items:center; gap:10px;
-    padding:18px 20px 14px; position:sticky; top:0; z-index:5;
+    padding:calc(18px + env(safe-area-inset-top)) 20px 14px; position:sticky; top:0; z-index:5;
     background:var(--bg);
   }
   .ruler-mark{ flex:0 0 auto; width:26px; height:26px; }
