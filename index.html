@@ -338,7 +338,19 @@ function loadRecords(){
 function saveRecord(r){
   const list = loadRecords();
   list.unshift(r);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    return;
+  }catch(e){
+    // 儲存空間不足時,先移除最舊的紀錄再重試,而不是整個失敗不動作
+    while(list.length > 1){
+      list.pop();
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        return;
+      }catch(e2){ /* 繼續移除下一筆再試 */ }
+    }
+  }
 }
 
 function showScreen(id){
@@ -399,6 +411,20 @@ function analyzePhoto(dataUrl){
     }
     const ratio = greenish / total;
     currentGrassHigh = ratio > GRASS_RULES.greenRatioThreshold;
+
+    // 手機相機拍出來的原始照片檔案通常很大(好幾MB),
+    // 直接存進手機瀏覽器容易超過空間上限而存失敗。
+    // 這裡把照片縮小、壓縮成JPEG後再用於顯示跟儲存。
+    const maxW = 480;
+    const scale = Math.min(1, maxW / img.width);
+    const cw = Math.max(1, Math.round(img.width * scale));
+    const ch = Math.max(1, Math.round(img.height * scale));
+    const dispCanvas = document.createElement("canvas");
+    dispCanvas.width = cw;
+    dispCanvas.height = ch;
+    dispCanvas.getContext("2d").drawImage(img, 0, 0, cw, ch);
+    currentPhotoDataUrl = dispCanvas.toDataURL("image/jpeg", 0.7);
+
     // 模擬判讀需要一點時間,體感比較像真的在跑AI
     setTimeout(() => showResult(), 1100);
   };
@@ -465,14 +491,18 @@ function submitAssessment(){
   const advice = pickAdvice(currentAnswers, currentGrassHigh);
   document.getElementById("adviceText").textContent = advice;
 
-  saveRecord({
-    month: monthKey(),
-    date: new Date().toISOString(),
-    photo: currentPhotoDataUrl,
-    grassHigh: currentGrassHigh,
-    answers: { ...currentAnswers },
-    advice,
-  });
+  try{
+    saveRecord({
+      month: monthKey(),
+      date: new Date().toISOString(),
+      photo: currentPhotoDataUrl,
+      grassHigh: currentGrassHigh,
+      answers: { ...currentAnswers },
+      advice,
+    });
+  }catch(e){
+    // 即使儲存紀錄發生非預期的錯誤,也不要卡住畫面,建議還是要顯示給農民看
+  }
 
   showScreen("advice");
 }
