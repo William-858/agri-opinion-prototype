@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>草生栽培幫手</title>
+
+<!-- 讓手機瀏覽器「加入主畫面」後,以類似App的全螢幕方式開啟 -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#3F6B4A" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="草生幫手" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #F7F5EF;
+    --card: #FFFFFF;
+    --ink: #2B2E26;
+    --ink-soft: #6B6A5E;
+    --moss: #3F6B4A;
+    --moss-dark: #2C4E35;
+    --moss-tint: #E7EEE4;
+    --soil: #8B6A4B;
+    --wheat: #E8B958;
+    --alert: #C1543C;
+    --line: #DEDACB;
+    --radius: 18px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+  body{
+    display:flex; flex-direction:column; min-height:100vh;
+    max-width:480px; margin:0 auto; position:relative;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; gap:10px;
+    padding:18px 20px 14px; position:sticky; top:0; z-index:5;
+    background:var(--bg);
+  }
+  .ruler-mark{ flex:0 0 auto; width:26px; height:26px; }
+  header h1{ font-size:19px; font-weight:900; letter-spacing:.5px; margin:0; flex:1; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; border:none; background:var(--moss-tint);
+    color:var(--moss-dark); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .icon-btn svg{ width:19px; height:19px; }
+
+  main{ flex:1; padding:4px 20px 28px; }
+  .screen{ display:none; animation: fadein .25s ease; }
+  .screen.active{ display:block; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- generic card ---------- */
+  .card{
+    background:var(--card); border-radius:var(--radius); padding:20px;
+    border:1px solid var(--line); margin-bottom:16px;
+  }
+  .eyebrow{ font-size:12px; letter-spacing:1.5px; color:var(--soil); font-weight:700; margin:0 0 6px; text-transform:uppercase; }
+  h2{ font-size:20px; font-weight:900; margin:0 0 8px; }
+  p.lead{ color:var(--ink-soft); font-size:15px; line-height:1.6; margin:0 0 18px; }
+
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:16px; border-radius:14px; border:none;
+    font-size:17px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .btn-primary{ background:var(--moss); color:#fff; }
+  .btn-primary:active{ background:var(--moss-dark); }
+  .btn-ghost{ background:transparent; color:var(--moss-dark); border:1.5px solid var(--line); }
+  .btn:disabled{ opacity:.4; }
+
+  /* ---------- home ---------- */
+  .status-badge{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px;
+    background:var(--moss-tint); color:var(--moss-dark); font-size:13px; font-weight:700; margin-bottom:14px;
+  }
+  .month-title{ font-size:26px; font-weight:900; margin:2px 0 4px; }
+
+  /* ---------- ruler step indicator (signature element) ---------- */
+  .ruler-steps{ display:flex; align-items:center; gap:6px; margin: 6px 0 22px; }
+  .ruler-steps .stem{ flex:1; height:2px; background:var(--line); position:relative; }
+  .tick{ width:3px; border-radius:2px; background:var(--line); }
+  .tick.pending{ height:14px; }
+  .tick.done{ height:20px; background:var(--moss); }
+  .tick.current{ height:26px; background:var(--alert); }
+  .ruler-steps-labels{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin-top:6px; }
+
+  /* ---------- capture ---------- */
+  .capture-box{
+    border:2px dashed var(--line); border-radius:var(--radius);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:40px 20px; text-align:center; gap:10px; margin-bottom:16px; background:var(--moss-tint);
+  }
+  .capture-box svg{ width:40px; height:40px; color:var(--moss-dark); }
+  .capture-box span{ font-size:14px; color:var(--ink-soft); }
+  #photoInput{ display:none; }
+  .preview-img{ width:100%; border-radius:14px; display:block; margin-bottom:16px; object-fit:cover; max-height:260px; }
+
+  /* ---------- analyzing ---------- */
+  .spinner-wrap{ display:flex; flex-direction:column; align-items:center; gap:18px; padding:50px 0 30px; }
+  .spinner{ width:44px; height:44px; border-radius:50%; border:4px solid var(--moss-tint); border-top-color:var(--moss); animation: spin 0.9s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ---------- result badge ---------- */
+  .grass-badge{
+    display:flex; align-items:center; gap:14px; padding:16px; border-radius:14px; margin-bottom:18px;
+  }
+  .grass-badge.high{ background:#FBEDE9; }
+  .grass-badge.low{ background:var(--moss-tint); }
+  .grass-badge .mark{ width:44px; height:44px; flex:0 0 auto; }
+  .grass-badge .txt b{ display:block; font-size:17px; }
+  .grass-badge.high .txt b{ color:var(--alert); }
+  .grass-badge.low .txt b{ color:var(--moss-dark); }
+  .grass-badge .txt small{ color:var(--ink-soft); font-size:13px; }
+
+  /* ---------- self assessment ---------- */
+  .q-block{ margin-bottom:20px; }
+  .q-title{ font-size:15px; font-weight:700; margin-bottom:10px; }
+  .opt-row{ display:flex; gap:10px; }
+  .opt{
+    flex:1; padding:13px; text-align:center; border-radius:12px; border:1.5px solid var(--line);
+    font-size:15px; font-weight:700; color:var(--ink-soft); cursor:pointer; background:#fff;
+  }
+  .opt.selected{ border-color:var(--moss); background:var(--moss); color:#fff; }
+
+  /* ---------- advice ---------- */
+  .advice-card{ background:var(--moss-dark); color:#fff; border-radius:var(--radius); padding:22px; margin-bottom:16px; }
+  .advice-card .eyebrow{ color:var(--wheat); }
+  .advice-card p{ font-size:16px; line-height:1.7; margin:0; }
+
+  /* ---------- history ---------- */
+  .history-item{
+    display:flex; gap:12px; align-items:center; padding:12px; border-radius:14px; border:1px solid var(--line); margin-bottom:10px;
+  }
+  .history-item img{ width:52px; height:52px; border-radius:10px; object-fit:cover; flex:0 0 auto; background:var(--moss-tint); }
+  .history-item .meta{ flex:1; min-width:0; }
+  .history-item .meta b{ display:block; font-size:14px; }
+  .history-item .meta span{ font-size:12px; color:var(--ink-soft); }
+  .history-item .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .empty{ text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="ruler-mark" viewBox="0 0 26 26" fill="none">
+    <rect x="11.5" y="2" width="3" height="22" rx="1.5" fill="#E8B958"/>
+    <rect x="6" y="6" width="8" height="2.5" rx="1" fill="#3F6B4A"/>
+    <rect x="6" y="17.5" width="8" height="2.5" rx="1" fill="#C1543C"/>
+  </svg>
+  <h1>草生栽培幫手</h1>
+  <button class="icon-btn" onclick="showScreen('history')" aria-label="查看歷史紀錄">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+  </button>
+</header>
+
+<main>
+
+  <!-- ============ HOME ============ -->
+  <section class="screen active" id="screen-home">
+    <div class="card">
+      <span class="status-badge" id="homeStatusBadge">尚未拍照</span>
+      <div class="month-title" id="homeMonthTitle"></div>
+      <p class="lead" id="homeLead">每個月定點拍一張照片,幫你看看草長得怎麼樣,再給你這個月的耕作建議。</p>
+      <button class="btn btn-primary" onclick="startCapture()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.5"/></svg>
+        <span id="captureBtnLabel">拍照記錄本月草況</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ CAPTURE ============ -->
+  <section class="screen" id="screen-capture">
+    <p class="eyebrow">STEP 1</p>
+    <h2>拍一張田間照片</h2>
+    <p class="lead">請站在固定拍照點,鏡頭盡量對齊上次同樣的角度跟高度。</p>
+
+    <label class="capture-box" for="photoInput">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.5"/></svg>
+      <span>點一下開啟相機拍照</span>
+    </label>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" />
+    <button class="btn btn-ghost" onclick="showScreen('home')">取消</button>
+  </section>
+
+  <!-- ============ ANALYZING ============ -->
+  <section class="screen" id="screen-analyzing">
+    <p class="eyebrow">STEP 2</p>
+    <h2>AI 判讀中</h2>
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <p class="lead" style="margin:0;text-align:center;">正在比對草的高度,大概只要幾秒鐘</p>
+    </div>
+  </section>
+
+  <!-- ============ RESULT + SELF ASSESSMENT ============ -->
+  <section class="screen" id="screen-result">
+    <p class="eyebrow">STEP 2</p>
+    <h2>判讀結果</h2>
+    <img class="preview-img" id="resultPhoto" alt="拍攝照片" />
+    <div class="grass-badge" id="grassBadge">
+      <svg class="mark" id="grassBadgeIcon" viewBox="0 0 44 44" fill="none"></svg>
+      <div class="txt">
+        <b id="grassBadgeText">—</b>
+        <small>判斷基準:約膝蓋高度(50公分)</small>
+      </div>
+    </div>
+
+    <p class="eyebrow">STEP 3</p>
+    <h2>本月自我評估</h2>
+    <form id="assessForm"></form>
+
+    <button class="btn btn-primary" id="submitAssessBtn" disabled onclick="submitAssessment()">送出評估,查看建議</button>
+  </section>
+
+  <!-- ============ ADVICE ============ -->
+  <section class="screen" id="screen-advice">
+    <p class="eyebrow">STEP 4</p>
+    <h2>這個月的建議</h2>
+    <div class="advice-card">
+      <p class="eyebrow">耕作建議</p>
+      <p id="adviceText">—</p>
+    </div>
+    <button class="btn btn-primary" onclick="finishFlow()">完成,回到首頁</button>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section class="screen" id="screen-history">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="margin:0;">歷史紀錄</h2>
+      <button class="icon-btn" onclick="showScreen('home')" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+</main>
+
+<script>
+/* =====================================================================
+   設定區(邱分院可自行調整的內容)
+   ---------------------------------------------------------------
+   這一整段是「規則設定」,對應我們討論過的架構圖裡的管理端規則設定。
+   之後要調整判斷標準、自評題目、建議文字,都只需要改這裡,
+   不用動下面的程式邏輯。
+   ===================================================================== */
+
+// 草高判斷規則(placeholder用) ----------------------------------------
+// 目前用「照片綠色比例」當作示範用的簡易判斷邏輯(不是真的AI模型)。
+// 正式上線前,這裡需要換成真正呼叫AI影像辨識服務的程式(見檔案最後說明)。
+const GRASS_RULES = {
+  heightLabel: "膝蓋高度(約50公分)",
+  greenRatioThreshold: 0.33, // 綠色像素比例超過此門檻 → 判定為「高於膝蓋」
+};
+
+// 農民自評題目(可自行增減題目或選項) ------------------------------------
+const SELF_ASSESS_QUESTIONS = [
+  {
+    id: "pest",
+    title: "這次巡田,有沒有發現蟲害？",
+    options: [
+      { value: "yes", label: "有蟲害" },
+      { value: "no", label: "沒有蟲害" },
+    ],
+  },
+  {
+    id: "flower",
+    title: "目前果樹有開花嗎？",
+    options: [
+      { value: "yes", label: "有開花" },
+      { value: "no", label: "沒開花" },
+    ],
+  },
+  {
+    id: "fruit",
+    title: "整體看起來,果實長得如何？",
+    options: [
+      { value: "good", label: "長得不錯" },
+      { value: "bad", label: "長得不太好" },
+    ],
+  },
+];
+
+// 耕作建議規則(依序比對,符合條件就採用該建議;可自行增加規則) --------------
+// answers 會是 { pest, flower, fruit } , grassHigh 是 AI 判斷結果(true=高於膝蓋)
+const ADVICE_RULES = [
+  {
+    when: (a, grassHigh) => grassHigh && a.pest === "yes",
+    text: "草已經超過膝蓋高度,同時發現蟲害,建議儘快割草並聯繫農事所安排病蟲害檢查。",
+  },
+  {
+    when: (a, grassHigh) => grassHigh,
+    text: "草已經超過膝蓋高度,建議安排下一次割草,避免與果樹競爭養分及影響通風。",
+  },
+  {
+    when: (a, grassHigh) => a.fruit === "bad",
+    text: "草生狀況目前沒有超過膝蓋,但果實生長狀況不理想,建議聯繫農事所安排實地訪視,確認是否為其他因素影響。",
+  },
+  {
+    when: (a, grassHigh) => a.pest === "yes",
+    text: "草生狀況良好,但偵測到蟲害回報,建議持續觀察,若擴大範圍請聯繫農事所協助處理。",
+  },
+  {
+    when: () => true, // 預設建議(以上規則都不符合時採用)
+    text: "草生狀況良好,持續維持目前的管理方式,下個月同一時間再拍照記錄一次即可。",
+  },
+];
+
+/* =====================================================================
+   以下是前端流程邏輯,一般不需要調整
+   ===================================================================== */
+
+const STORAGE_KEY = "grassAppRecords";
+let currentPhotoDataUrl = null;
+let currentGrassHigh = null;
+let currentAnswers = {};
+
+function monthKey(d = new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
+function monthLabel(key){ const [y,m] = key.split("-"); return `${y}年${parseInt(m)}月`; }
+
+function loadRecords(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveRecord(r){
+  const list = loadRecords();
+  list.unshift(r);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+  if(id === "home") renderHome();
+  if(id === "history") renderHistory();
+}
+
+function renderHome(){
+  const list = loadRecords();
+  const thisMonth = monthKey();
+  const done = list.find(r => r.month === thisMonth);
+  const badge = document.getElementById("homeStatusBadge");
+  const label = document.getElementById("captureBtnLabel");
+  document.getElementById("homeMonthTitle").textContent = monthLabel(thisMonth);
+  if(done){
+    badge.textContent = "本月已完成";
+    label.textContent = "重新拍照(覆蓋本月紀錄)";
+  }else{
+    badge.textContent = "尚未拍照";
+    label.textContent = "拍照記錄本月草況";
+  }
+}
+
+function startCapture(){
+  document.getElementById("photoInput").value = "";
+  showScreen("capture");
+}
+
+document.getElementById("photoInput").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    currentPhotoDataUrl = evt.target.result;
+    showScreen("analyzing");
+    analyzePhoto(currentPhotoDataUrl);
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---- 草高判斷(目前為示範用的簡易影像heuristic,見上方 GRASS_RULES 說明) ----
+function analyzePhoto(dataUrl){
+  const img = new Image();
+  img.onload = function(){
+    const canvas = document.createElement("canvas");
+    const w = canvas.width = 60;
+    const h = canvas.height = 60;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    let greenish = 0, total = 0;
+    for(let i = 0; i < data.length; i += 4){
+      const r = data[i], g = data[i+1], b = data[i+2];
+      if(g > r + 8 && g > b + 8) greenish++;
+      total++;
+    }
+    const ratio = greenish / total;
+    currentGrassHigh = ratio > GRASS_RULES.greenRatioThreshold;
+    // 模擬判讀需要一點時間,體感比較像真的在跑AI
+    setTimeout(() => showResult(), 1100);
+  };
+  img.src = dataUrl;
+}
+
+function showResult(){
+  document.getElementById("resultPhoto").src = currentPhotoDataUrl;
+  const badge = document.getElementById("grassBadge");
+  const icon = document.getElementById("grassBadgeIcon");
+  const text = document.getElementById("grassBadgeText");
+  badge.className = "grass-badge " + (currentGrassHigh ? "high" : "low");
+  text.textContent = currentGrassHigh ? "草已超過膝蓋高度" : "草未超過膝蓋高度";
+  icon.innerHTML = currentGrassHigh
+    ? '<rect x="19" y="4" width="6" height="36" rx="3" fill="#C1543C"/><rect x="8" y="20" width="12" height="4" rx="2" fill="#C1543C"/>'
+    : '<rect x="19" y="4" width="6" height="36" rx="3" fill="#3F6B4A"/><rect x="8" y="30" width="12" height="4" rx="2" fill="#3F6B4A"/>';
+
+  buildAssessForm();
+  showScreen("result");
+}
+
+function buildAssessForm(){
+  currentAnswers = {};
+  const form = document.getElementById("assessForm");
+  form.innerHTML = "";
+  SELF_ASSESS_QUESTIONS.forEach(q => {
+    const block = document.createElement("div");
+    block.className = "q-block";
+    const title = document.createElement("div");
+    title.className = "q-title";
+    title.textContent = q.title;
+    block.appendChild(title);
+
+    const row = document.createElement("div");
+    row.className = "opt-row";
+    q.options.forEach(opt => {
+      const btn = document.createElement("div");
+      btn.className = "opt";
+      btn.textContent = opt.label;
+      btn.onclick = () => {
+        currentAnswers[q.id] = opt.value;
+        row.querySelectorAll(".opt").forEach(o => o.classList.remove("selected"));
+        btn.classList.add("selected");
+        checkAssessComplete();
+      };
+      row.appendChild(btn);
+    });
+    block.appendChild(row);
+    form.appendChild(block);
+  });
+}
+
+function checkAssessComplete(){
+  const complete = SELF_ASSESS_QUESTIONS.every(q => currentAnswers[q.id] !== undefined);
+  document.getElementById("submitAssessBtn").disabled = !complete;
+}
+
+function pickAdvice(answers, grassHigh){
+  const rule = ADVICE_RULES.find(r => r.when(answers, grassHigh));
+  return rule ? rule.text : "";
+}
+
+function submitAssessment(){
+  const advice = pickAdvice(currentAnswers, currentGrassHigh);
+  document.getElementById("adviceText").textContent = advice;
+
+  saveRecord({
+    month: monthKey(),
+    date: new Date().toISOString(),
+    photo: currentPhotoDataUrl,
+    grassHigh: currentGrassHigh,
+    answers: { ...currentAnswers },
+    advice,
+  });
+
+  showScreen("advice");
+}
+
+function finishFlow(){
+  showScreen("home");
+}
+
+function renderHistory(){
+  const list = loadRecords();
+  const wrap = document.getElementById("historyList");
+  if(list.length === 0){
+    wrap.innerHTML = '<div class="empty">還沒有任何拍照紀錄</div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  list.forEach(r => {
+    const item = document.createElement("div");
+    item.className = "history-item";
+    const dotColor = r.grassHigh ? "#C1543C" : "#3F6B4A";
+    item.innerHTML = `
+      <img src="${r.photo}" alt="" />
+      <div class="meta">
+        <b>${monthLabel(r.month)}</b>
+        <span>${r.grassHigh ? "草偏高" : "草偏低"} · ${new Date(r.date).toLocaleDateString("zh-TW")}</span>
+      </div>
+      <div class="dot" style="background:${dotColor}"></div>
+    `;
+    wrap.appendChild(item);
+  });
+}
+
+renderHome();
+</script>
+</body>
+</html>
